@@ -24,11 +24,34 @@
     "id":"2"
   }
  ````
+```` java
+    // На случай если данные будут заданых в формате JSON */
+    @Override
+    public FileEntity save(FileEntity fileEntity) {
+        return fileRepository.save(fileEntity);
+    }
+````
 Так же была добавлена возможность отправлять файлы в качестве параметра
  ````http
   POST /api/file/upload-file
 ````
 ![img.png](img.png)
+```` java
+    /*Загрузка файла
+    *   data - файл который должен быть указан в качестве параметра
+    *   description - описание файла
+    * */
+    @Override
+    public FileEntity save(MultipartFile data,String description) {
+        FileEntity file = toEntity(data);
+        
+        file.setDescription(description);
+        // Автоматическое задания даты при создании сущности пришлось исключить из за условий добавления файла путем JSON запроса
+        file.setCreationDate(LocalDateTime.now());
+
+        return fileRepository.save(file);
+    }
+````
 # Получение файла.
 На вход методу отправляется id файла, на выходе метод возвращает JSON, включающий в себя файл (в формате base64) и его атрибуты (название - title, дата и время отправки - creation_date, краткое описание документа - description)
 ````http
@@ -44,7 +67,15 @@
   "creation_date": "2024-08-23T07:09:14.919023"
   }
  ````
-
+ ```` java
+     @Override
+    public FileEntity findById(Long id) {
+        return fileRepository.findById(id)
+                .orElseThrow(() ->
+                        new FileNotFoundException(String.format("File with id %s not found", id))
+                );
+    }
+````
 # Получение списка файлов , пагинация и сотировка по дате добавления
 ````http
   GET /api/file/find-all
@@ -90,7 +121,24 @@
   }
 ]
  ````
+```` java
+/* Получение списка всех файлов с учетом пагинации и сортировкой по дате
+    *  page - страница,
+    *  size - размер страницы,
+    *  groupBy - сортировка
+    * */
+    public List<FileEntity> findAll(int page,int size ,boolean groupBy) {
 
+        Sort.Direction direction = groupBy ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        PageRequest request = PageRequest.of(page,size,Sort.by(direction,"creationDate"));
+
+        return Optional.ofNullable(fileRepository.findAll(request).toList())
+                .orElseThrow(()->
+                        new FileNotFoundException("Is empty")
+                );
+    }
+````
 # Запуск приложения
 ````bash
     git clone https://github.com/belyavtsevrs/FileStorage.git
@@ -105,3 +153,4 @@
 ````bash
     docker-compose down
 ````
+

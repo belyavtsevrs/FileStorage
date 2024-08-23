@@ -21,17 +21,25 @@ public class FileServiceImpl implements FileService {
     public FileServiceImpl(FileRepository fileRepository) {
         this.fileRepository = fileRepository;
     }
-    // На случай если данные будут заданы в формате JSON
+
+    // На случай если данные будут заданых в формате JSON */
     @Override
     public FileEntity save(FileEntity fileEntity) {
         return fileRepository.save(fileEntity);
     }
-    // Загрузка файла
+
+    /*Загрузка файла
+    *   data - файл который должен быть указан в качестве параметра
+    *   description - описание файла
+    * */
     @Override
     public FileEntity save(MultipartFile data,String description) {
         FileEntity file = toEntity(data);
+
         file.setDescription(description);
+
         file.setCreationDate(LocalDateTime.now());
+
         return fileRepository.save(file);
     }
     // Поиск файла по Id
